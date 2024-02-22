@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\UserController;
@@ -15,11 +16,17 @@ use App\Http\Controllers\UserController;
 |
 */
 
+Route::get('/admins-only', function() {
+    return 'Only for admins';
+})->middleware('can:visitAdminPages');
+
 // User Routes
 Route::get('/', [UserController::class, 'showCorrectHomePage'])->name('login');
 Route::post('/register', [UserController::class, 'register'])->middleware('guest');
 Route::post('/login', [UserController::class, 'login'])->middleware('guest');
 Route::post('/logout', [UserController::class, 'logout'])->middleware('authenticated');
+Route::get('/manage-avatar', [UserController::class, 'showAvatarForm'])->middleware('authenticated');
+Route::post('/manage-avatar', [UserController::class, 'storeAvatar'])->middleware('authenticated');
 
 // Blog Routes
 Route::get('/create-post', [PostController::class, 'showCreateForm'])->middleware('authenticated');

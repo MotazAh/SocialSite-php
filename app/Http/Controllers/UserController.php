@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Follow;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\View;
 use Intervention\Image\Facades\Image;
 use Illuminate\Validation\Rule;
 
@@ -12,7 +14,7 @@ class UserController extends Controller
 {
     public function showCorrectHomePage() {
         if (auth()->check()) {
-            return view('homepage-feed');
+            return view('homepage-feed', ['posts' => request()->user()->feedPosts()->latest()->paginate(4)]);
         } else {
             return view('homepage');
         }
@@ -54,10 +56,30 @@ class UserController extends Controller
         return redirect('/')->with('success', 'Account created successfully');
     }
 
-    public function profile(User $user) {
+    private function getSharedData(User $user) {
         $posts = $user->posts()->latest()->get();
+        $isFollowing = 0;
 
-        return view('profile-posts', ['username' => $user->username, 'posts' => $posts, 'postCount' => $posts->count(), 'avatar' => $user->avatar]);
+        if (auth()->check()) {
+            $isFollowing = Follow::where([['user_id', '=', auth()->user()->id], ['followedUser', '=', $user->id]])->count();
+        }
+
+        View::share('sharedData', ['username' => $user->username, 'postCount' => $posts->count(), 'avatar' => $user->avatar, 'isFollowing' => $isFollowing, 'followerCount' => $user->followers()->count(), 'followingCount' => $user->following()->count()]);
+    }
+
+    public function profile(User $user) {
+        $this->getSharedData($user);
+        return view('profile-posts', ['posts' => $user->posts()->latest()->get()]);
+    }
+
+    public function profileFollowers(User $user) {
+        $this->getSharedData($user);
+        return view('profile-followers', ['followers' => $user->followers()->latest()->get()]);
+    }
+
+    public function profileFollowing(User $user) {
+        $this->getSharedData($user);
+        return view('profile-following', ['following' => $user->following()->latest()->get()]);
     }
     
     public function showAvatarForm() {

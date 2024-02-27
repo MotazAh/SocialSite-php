@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\FollowController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,3 +39,9 @@ Route::put('/post/{post}', [PostController::class, 'updatePost'])->middleware('c
 
 // Profile Routes
 Route::get('/profile/{user:username}', [UserController::class, 'profile']); // user:username tells the database to look for the user using the username column
+Route::get('/profile/{user:username}/followers', [UserController::class, 'profileFollowers']);
+Route::get('/profile/{user:username}/following', [UserController::class, 'profileFollowing']);
+
+// Follow Routes
+Route::post('/create-follow/{user:username}', [FollowController::class, 'createFollow'])->middleware('authenticated');
+Route::post('/remove-follow/{user:username}', [FollowController::class, 'removeFollow'])->middleware('authenticated');

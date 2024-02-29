@@ -1,10 +1,3 @@
 <x-profile :sharedData="$sharedData" docTitle="{{$sharedData['username']}}'s Followers"> <!-- avatar="$avatar" is used to get avatar from parent component -->
-    <div class="list-group">
-      @foreach ($followers as $follow)
-        <a href="/profile/{{$follow->userFollowing->username}}" class="list-group-item list-group-item-action">
-            <img class="avatar-tiny" src="{{$follow->userFollowing->avatar}}" />
-            {{$follow->userFollowing->username}}
-        </a>
-      @endforeach
-    </div>
+  @include('profile-followers-only')
 </x-profile>

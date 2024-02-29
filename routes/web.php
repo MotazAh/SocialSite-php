@@ -1,5 +1,7 @@
 <?php
 
+use App\Events\ChatMessage;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PostController;
@@ -43,6 +45,30 @@ Route::get('/profile/{user:username}', [UserController::class, 'profile']); // u
 Route::get('/profile/{user:username}/followers', [UserController::class, 'profileFollowers']);
 Route::get('/profile/{user:username}/following', [UserController::class, 'profileFollowing']);
 
+Route::middleware('cache.headers:public;max_age=20;etag')->group(function() { // Make all routes in the function use given middleware
+    Route::get('/profile/{user:username}/raw', [UserController::class, 'profileRaw']);
+    Route::get('/profile/{user:username}/followers/raw', [UserController::class, 'profileFollowersRaw']);
+    Route::get('/profile/{user:username}/following/raw', [UserController::class, 'profileFollowingRaw']);
+});
+
 // Follow Routes
 Route::post('/create-follow/{user:username}', [FollowController::class, 'createFollow'])->middleware('authenticated');
 Route::post('/remove-follow/{user:username}', [FollowController::class, 'removeFollow'])->middleware('authenticated');
+
+// Chat Routes
+Route::post('/send-chat-message', function(Request $request) {
+    $formFields = $request->validate([
+        'textvalue' => 'required'
+    ]);
+
+    if (!trim(strip_tags($formFields['textvalue']))) {
+        return response()->noContent();
+    }
+
+    $username = auth()->user()->username;
+    $text = strip_tags($request->textvalue);
+    $avatar = auth()->user()->avatar;
+
+    broadcast(new ChatMessage(['username' => $username, 'textvalue' => $text, 'avatar' => $avatar]))->toOthers();
+    return response()->noContent();
+})->middleware('authenticated');

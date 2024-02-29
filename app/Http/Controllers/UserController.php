@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ExampleEvent;
 use App\Models\Follow;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -28,6 +29,7 @@ class UserController extends Controller
 
         if (auth()->attempt(['username' => $incomingFields['loginusername'], 'password' => $incomingFields['loginpassword']])) {
             $request->session()->regenerate(); // Save session in a cookie after a successful login
+            event(new ExampleEvent(['username' => auth()->user()->username, 'action' => 'login']));
             return redirect('/')->with('success', 'You have successfully logged in');
         } else {
             return redirect('/')->with('failure', 'Invalid login');
@@ -35,6 +37,7 @@ class UserController extends Controller
     }
 
     public function logout() {
+        event(new ExampleEvent(['username' => auth()->user()->username, 'action' => 'logout']));
         auth()->logout();
         return redirect('/')->with('success', 'You have logged out');
     }
@@ -72,14 +75,29 @@ class UserController extends Controller
         return view('profile-posts', ['posts' => $user->posts()->latest()->get()]);
     }
 
+    public function profileRaw(User $user) {
+        $posts = $user->posts()->latest()->get();
+        return response()->json(['theHTML' => view('profile-posts-only', ['posts' => $posts])->render(), 'docTitle' => $user->username . "'s Profile"]);
+    }
+
     public function profileFollowers(User $user) {
         $this->getSharedData($user);
         return view('profile-followers', ['followers' => $user->followers()->latest()->get()]);
     }
 
+    public function profileFollowersRaw(User $user) {
+        $followers = $user->followers()->latest()->get();
+        return response()->json(['theHTML' => view('profile-followers-only', ['followers' => $followers])->render(), 'docTitle' => $user->username . "'s Followers"]);
+    }
+
     public function profileFollowing(User $user) {
         $this->getSharedData($user);
         return view('profile-following', ['following' => $user->following()->latest()->get()]);
+    }
+
+    public function profileFollowingRaw(User $user) {
+        $following = $user->following()->latest()->get();
+        return response()->json(['theHTML' => view('profile-following-only', ['following' => $following])->render(), 'docTitle' => $user->username . "'s Followers"]);
     }
     
     public function showAvatarForm() {
